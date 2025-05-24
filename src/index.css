@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -35,20 +36,36 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* Custom colors for clothing rental theme */
+    --navy-50: 240 23% 97%;
+    --navy-100: 240 16% 94%;
+    --navy-200: 240 13% 86%;
+    --navy-300: 240 12% 73%;
+    --navy-400: 240 11% 58%;
+    --navy-500: 240 11% 44%;
+    --navy-600: 240 13% 35%;
+    --navy-700: 240 14% 27%;
+    --navy-800: 240 15% 20%;
+    --navy-900: 240 16% 15%;
+
+    --burgundy-50: 0 20% 97%;
+    --burgundy-100: 0 15% 94%;
+    --burgundy-200: 0 13% 86%;
+    --burgundy-300: 0 12% 73%;
+    --burgundy-400: 0 11% 58%;
+    --burgundy-500: 0 11% 44%;
+    --burgundy-600: 0 13% 35%;
+    --burgundy-700: 0 14% 27%;
+    --burgundy-800: 0 15% 20%;
+    --burgundy-900: 0 16% 15%;
   }
 
   .dark {
@@ -98,4 +115,65 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom utility classes for navy and burgundy colors */
+@layer utilities {
+  .text-navy-50 { color: hsl(var(--navy-50)); }
+  .text-navy-100 { color: hsl(var(--navy-100)); }
+  .text-navy-200 { color: hsl(var(--navy-200)); }
+  .text-navy-300 { color: hsl(var(--navy-300)); }
+  .text-navy-400 { color: hsl(var(--navy-400)); }
+  .text-navy-500 { color: hsl(var(--navy-500)); }
+  .text-navy-600 { color: hsl(var(--navy-600)); }
+  .text-navy-700 { color: hsl(var(--navy-700)); }
+  .text-navy-800 { color: hsl(var(--navy-800)); }
+  .text-navy-900 { color: hsl(var(--navy-900)); }
+
+  .bg-navy-50 { background-color: hsl(var(--navy-50)); }
+  .bg-navy-100 { background-color: hsl(var(--navy-100)); }
+  .bg-navy-200 { background-color: hsl(var(--navy-200)); }
+  .bg-navy-300 { background-color: hsl(var(--navy-300)); }
+  .bg-navy-400 { background-color: hsl(var(--navy-400)); }
+  .bg-navy-500 { background-color: hsl(var(--navy-500)); }
+  .bg-navy-600 { background-color: hsl(var(--navy-600)); }
+  .bg-navy-700 { background-color: hsl(var(--navy-700)); }
+  .bg-navy-800 { background-color: hsl(var(--navy-800)); }
+  .bg-navy-900 { background-color: hsl(var(--navy-900)); }
+
+  .border-navy-500 { border-color: hsl(var(--navy-500)); }
+  .border-navy-600 { border-color: hsl(var(--navy-600)); }
+
+  .ring-navy-500 { --tw-ring-color: hsl(var(--navy-500)); }
+  .ring-navy-600 { --tw-ring-color: hsl(var(--navy-600)); }
+
+  .from-navy-600 { --tw-gradient-from: hsl(var(--navy-600)); }
+  .to-navy-700 { --tw-gradient-to: hsl(var(--navy-700)); }
+  .from-navy-700 { --tw-gradient-from: hsl(var(--navy-700)); }
+  .to-navy-800 { --tw-gradient-to: hsl(var(--navy-800)); }
+  .from-navy-900 { --tw-gradient-from: hsl(var(--navy-900)); }
+
+  .text-burgundy-50 { color: hsl(var(--burgundy-50)); }
+  .text-burgundy-100 { color: hsl(var(--burgundy-100)); }
+  .text-burgundy-200 { color: hsl(var(--burgundy-200)); }
+  .text-burgundy-300 { color: hsl(var(--burgundy-300)); }
+  .text-burgundy-400 { color: hsl(var(--burgundy-400)); }
+  .text-burgundy-500 { color: hsl(var(--burgundy-500)); }
+  .text-burgundy-600 { color: hsl(var(--burgundy-600)); }
+  .text-burgundy-700 { color: hsl(var(--burgundy-700)); }
+  .text-burgundy-800 { color: hsl(var(--burgundy-800)); }
+  .text-burgundy-900 { color: hsl(var(--burgundy-900)); }
+
+  .bg-burgundy-50 { background-color: hsl(var(--burgundy-50)); }
+  .bg-burgundy-100 { background-color: hsl(var(--burgundy-100)); }
+  .bg-burgundy-200 { background-color: hsl(var(--burgundy-200)); }
+  .bg-burgundy-300 { background-color: hsl(var(--burgundy-300)); }
+  .bg-burgundy-400 { background-color: hsl(var(--burgundy-400)); }
+  .bg-burgundy-500 { background-color: hsl(var(--burgundy-500)); }
+  .bg-burgundy-600 { background-color: hsl(var(--burgundy-600)); }
+  .bg-burgundy-700 { background-color: hsl(var(--burgundy-700)); }
+  .bg-burgundy-800 { background-color: hsl(var(--burgundy-800)); }
+  .bg-burgundy-900 { background-color: hsl(var(--burgundy-900)); }
+
+  .to-burgundy-900 { --tw-gradient-to: hsl(var(--burgundy-900)); }
 }
