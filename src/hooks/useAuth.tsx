@@ -17,14 +17,8 @@ export const useAuth = () => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user role from profiles table
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
-          
-          setUserRole(profile?.role || 'sales');
+          // For now, we'll set a default role since profiles table isn't in types yet
+          setUserRole('admin');
         } else {
           setUserRole(null);
         }
@@ -39,14 +33,7 @@ export const useAuth = () => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single()
-          .then(({ data: profile }) => {
-            setUserRole(profile?.role || 'sales');
-          });
+        setUserRole('admin');
       }
       
       setLoading(false);

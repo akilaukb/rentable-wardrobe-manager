@@ -1,22 +1,79 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { sampleProducts } from '../../data/sampleData';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+interface Product {
+  id: string;
+  name: string;
+  category: string;
+  price_per_day: number;
+  stock_quantity: number;
+  status: 'available' | 'booked' | 'maintenance';
+  adjustment_notes?: string;
+}
 
 const ProductsDashboard = () => {
+  const [products, setProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const filteredProducts = sampleProducts.filter(product => {
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Failed to fetch products",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setProducts(data || []);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.category.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || product.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p>Loading products...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -36,7 +93,7 @@ const ProductsDashboard = () => {
         <Card>
           <CardContent className="p-6">
             <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">{sampleProducts.length}</p>
+              <p className="text-2xl font-bold text-gray-900">{products.length}</p>
               <p className="text-sm text-gray-600">Total Products</p>
             </div>
           </CardContent>
@@ -45,7 +102,7 @@ const ProductsDashboard = () => {
           <CardContent className="p-6">
             <div className="text-center">
               <p className="text-2xl font-bold text-green-600">
-                {sampleProducts.filter(p => p.status === 'available').length}
+                {products.filter(p => p.status === 'available').length}
               </p>
               <p className="text-sm text-gray-600">Available</p>
             </div>
@@ -55,9 +112,9 @@ const ProductsDashboard = () => {
           <CardContent className="p-6">
             <div className="text-center">
               <p className="text-2xl font-bold text-red-600">
-                {sampleProducts.filter(p => p.status === 'rented').length}
+                {products.filter(p => p.status === 'booked').length}
               </p>
-              <p className="text-sm text-gray-600">Rented</p>
+              <p className="text-sm text-gray-600">Booked</p>
             </div>
           </CardContent>
         </Card>
@@ -65,7 +122,7 @@ const ProductsDashboard = () => {
           <CardContent className="p-6">
             <div className="text-center">
               <p className="text-2xl font-bold text-blue-600">
-                {sampleProducts.reduce((sum, p) => sum + (p.stock || 0), 0)}
+                {products.reduce((sum, p) => sum + (p.stock_quantity || 0), 0)}
               </p>
               <p className="text-sm text-gray-600">Total Stock</p>
             </div>
@@ -95,7 +152,8 @@ const ProductsDashboard = () => {
             >
               <option value="all">All Status</option>
               <option value="available">Available</option>
-              <option value="rented">Rented</option>
+              <option value="booked">Booked</option>
+              <option value="maintenance">Maintenance</option>
             </select>
           </div>
         </CardContent>
@@ -111,10 +169,10 @@ const ProductsDashboard = () => {
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left p-2">Image</th>
                   <th className="text-left p-2">Name</th>
                   <th className="text-left p-2">Category</th>
                   <th className="text-left p-2">Price/Day</th>
+                  <th className="text-left p-2">Stock</th>
                   <th className="text-left p-2">Status</th>
                   <th className="text-left p-2">Actions</th>
                 </tr>
@@ -122,16 +180,10 @@ const ProductsDashboard = () => {
               <tbody>
                 {filteredProducts.map((product) => (
                   <tr key={product.id} className="border-b">
-                    <td className="p-2">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-12 h-12 object-cover rounded"
-                      />
-                    </td>
                     <td className="p-2 font-medium">{product.name}</td>
                     <td className="p-2">{product.category}</td>
-                    <td className="p-2">LKR {product.price}</td>
+                    <td className="p-2">LKR {product.price_per_day}</td>
+                    <td className="p-2">{product.stock_quantity}</td>
                     <td className="p-2">
                       <Badge variant={product.status === 'available' ? 'default' : 'destructive'}>
                         {product.status}

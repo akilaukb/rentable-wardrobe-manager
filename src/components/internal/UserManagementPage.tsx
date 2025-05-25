@@ -31,55 +31,58 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+interface StaffMember {
+  id: string;
+  name: string;
+  role: 'admin' | 'sales' | 'ironing' | 'supervisor';
+  commission_earned: number;
+  created_at: string;
+  user_id?: string;
+}
+
 const UserManagementPage = () => {
-  const [users, setUsers] = useState([]);
+  const [staff, setStaff] = useState<StaffMember[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newUser, setNewUser] = useState({
-    email: '',
-    password: '',
-    fullName: '',
-    role: 'sales'
+  const [newStaff, setNewStaff] = useState({
+    name: '',
+    role: 'sales' as 'admin' | 'sales' | 'ironing' | 'supervisor'
   });
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchUsers();
+    fetchStaff();
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchStaff = async () => {
     try {
       const { data } = await supabase
-        .from('profiles')
+        .from('staff')
         .select('*')
         .order('created_at', { ascending: false });
       
-      setUsers(data || []);
+      setStaff(data || []);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error fetching staff:', error);
     }
   };
 
-  const handleAddUser = async (e: React.FormEvent) => {
+  const handleAddStaff = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      // Create user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUser.email,
-        password: newUser.password,
-        options: {
-          data: {
-            full_name: newUser.fullName,
-            role: newUser.role
-          }
-        }
-      });
+      const { error } = await supabase
+        .from('staff')
+        .insert([{
+          name: newStaff.name,
+          role: newStaff.role,
+          commission_earned: 0
+        }]);
 
-      if (authError) {
+      if (error) {
         toast({
           title: "Error",
-          description: authError.message,
+          description: error.message,
           variant: "destructive",
         });
         return;
@@ -87,53 +90,50 @@ const UserManagementPage = () => {
 
       toast({
         title: "Success",
-        description: "User created successfully",
+        description: "Staff member added successfully",
       });
 
       setIsAddDialogOpen(false);
-      setNewUser({ email: '', password: '', fullName: '', role: 'sales' });
-      fetchUsers();
+      setNewStaff({ name: '', role: 'sales' });
+      fetchStaff();
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to create user",
+        description: "Failed to add staff member",
         variant: "destructive",
       });
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+  const handleDeleteStaff = async (staffId: string) => {
+    if (!confirm('Are you sure you want to delete this staff member?')) return;
 
     try {
-      // Note: In a real application, you'd need admin privileges to delete users
-      // For now, we'll just remove from profiles table
       const { error } = await supabase
-        .from('profiles')
+        .from('staff')
         .delete()
-        .eq('id', userId);
+        .eq('id', staffId);
 
       if (error) throw error;
 
       toast({
         title: "Success",
-        description: "User deleted successfully",
+        description: "Staff member deleted successfully",
       });
       
-      fetchUsers();
+      fetchStaff();
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to delete user",
+        description: "Failed to delete staff member",
         variant: "destructive",
       });
     }
   };
 
-  const filteredUsers = users.filter((user: any) =>
-    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.role?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredStaff = staff.filter((member) =>
+    member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    member.role?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getRoleBadgeColor = (role: string) => {
@@ -150,54 +150,34 @@ const UserManagementPage = () => {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600">Create and manage system user accounts</p>
+          <h1 className="text-3xl font-bold text-gray-900">Staff Management</h1>
+          <p className="text-gray-600">Manage system staff members</p>
         </div>
         
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-purple-600 hover:bg-purple-700">
               <Plus className="w-4 h-4 mr-2" />
-              Add User
+              Add Staff
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New User</DialogTitle>
+              <DialogTitle>Add New Staff Member</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleAddUser} className="space-y-4">
+            <form onSubmit={handleAddStaff} className="space-y-4">
               <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="name">Full Name</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  value={newUser.email}
-                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={newUser.password}
-                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  value={newUser.fullName}
-                  onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
+                  id="name"
+                  value={newStaff.name}
+                  onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
                   required
                 />
               </div>
               <div>
                 <Label htmlFor="role">Role</Label>
-                <Select value={newUser.role} onValueChange={(value) => setNewUser({ ...newUser, role: value })}>
+                <Select value={newStaff.role} onValueChange={(value: any) => setNewStaff({ ...newStaff, role: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -209,7 +189,7 @@ const UserManagementPage = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" className="w-full">Create User</Button>
+              <Button type="submit" className="w-full">Add Staff Member</Button>
             </form>
           </DialogContent>
         </Dialog>
@@ -219,7 +199,7 @@ const UserManagementPage = () => {
       <div className="flex items-center space-x-2">
         <Search className="w-4 h-4 text-gray-500" />
         <Input
-          placeholder="Search users by name, email, or role..."
+          placeholder="Search staff by name or role..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
@@ -233,8 +213,8 @@ const UserManagementPage = () => {
             <div className="flex items-center">
               <User className="w-8 h-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-2xl font-bold">{users.length}</p>
-                <p className="text-sm text-gray-600">Total Users</p>
+                <p className="text-2xl font-bold">{staff.length}</p>
+                <p className="text-sm text-gray-600">Total Staff</p>
               </div>
             </div>
           </CardContent>
@@ -246,7 +226,7 @@ const UserManagementPage = () => {
               <User className="w-8 h-8 text-red-600" />
               <div className="ml-4">
                 <p className="text-2xl font-bold">
-                  {users.filter((u: any) => u.role === 'admin').length}
+                  {staff.filter((s) => s.role === 'admin').length}
                 </p>
                 <p className="text-sm text-gray-600">Administrators</p>
               </div>
@@ -260,7 +240,7 @@ const UserManagementPage = () => {
               <User className="w-8 h-8 text-purple-600" />
               <div className="ml-4">
                 <p className="text-2xl font-bold">
-                  {users.filter((u: any) => u.role === 'sales').length}
+                  {staff.filter((s) => s.role === 'sales').length}
                 </p>
                 <p className="text-sm text-gray-600">Sales Staff</p>
               </div>
@@ -274,7 +254,7 @@ const UserManagementPage = () => {
               <User className="w-8 h-8 text-green-600" />
               <div className="ml-4">
                 <p className="text-2xl font-bold">
-                  {users.filter((u: any) => u.role === 'ironing').length}
+                  {staff.filter((s) => s.role === 'ironing').length}
                 </p>
                 <p className="text-sm text-gray-600">Processing Staff</p>
               </div>
@@ -283,33 +263,33 @@ const UserManagementPage = () => {
         </Card>
       </div>
 
-      {/* Users Table */}
+      {/* Staff Table */}
       <Card>
         <CardHeader>
-          <CardTitle>System Users</CardTitle>
+          <CardTitle>Staff Members</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Commission Earned</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.map((user: any) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.full_name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
+              {filteredStaff.map((member) => (
+                <TableRow key={member.id}>
+                  <TableCell className="font-medium">{member.name}</TableCell>
                   <TableCell>
-                    <Badge className={getRoleBadgeColor(user.role)}>
-                      {user.role}
+                    <Badge className={getRoleBadgeColor(member.role)}>
+                      {member.role}
                     </Badge>
                   </TableCell>
-                  <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>LKR {member.commission_earned || 0}</TableCell>
+                  <TableCell>{new Date(member.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button variant="outline" size="sm">
@@ -319,7 +299,7 @@ const UserManagementPage = () => {
                         variant="outline" 
                         size="sm" 
                         className="text-red-600"
-                        onClick={() => handleDeleteUser(user.id)}
+                        onClick={() => handleDeleteStaff(member.id)}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
