@@ -1,6 +1,6 @@
 
-import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useState } from 'react';
 import InternalNavbar from './InternalNavbar';
 import InternalSidebar from './InternalSidebar';
 import MainDashboard from '../admin/MainDashboard';
@@ -12,6 +12,7 @@ import ReadyToGoDashboard from '../admin/ReadyToGoDashboard';
 import ReturnsDashboard from '../admin/ReturnsDashboard';
 import UserManagementPage from './UserManagementPage';
 import CommissionPage from './CommissionPage';
+import { supabase } from '@/integrations/supabase/client';
 
 interface InternalDashboardProps {
   userRole: string | null;
@@ -20,10 +21,8 @@ interface InternalDashboardProps {
 const InternalDashboard = ({ userRole }: InternalDashboardProps) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_role');
-    window.location.href = '/login';
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
 
   return (
@@ -52,17 +51,14 @@ const InternalDashboard = ({ userRole }: InternalDashboardProps) => {
             <Route path="/ready" element={<ReadyToGoDashboard />} />
             <Route path="/returns" element={<ReturnsDashboard />} />
             
-            {/* Admin-only routes */}
             {userRole === 'admin' && (
               <Route path="/users" element={<UserManagementPage />} />
             )}
             
-            {/* Sales staff commission page */}
             {(userRole === 'sales' || userRole === 'admin') && (
               <Route path="/commissions" element={<CommissionPage />} />
             )}
             
-            {/* Fallback */}
             <Route path="*" element={<Navigate to="/admin" replace />} />
           </Routes>
         </main>

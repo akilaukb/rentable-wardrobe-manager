@@ -1,4 +1,5 @@
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   List, 
@@ -8,20 +9,104 @@ import {
   TrendingUp,
   TrendingDown 
 } from 'lucide-react';
-import { sampleProducts, sampleCustomers, sampleOrders, sampleStaff } from '../../data/sampleData';
+import { supabase } from '@/integrations/supabase/client';
 
 const MainDashboard = () => {
-  const totalProducts = sampleProducts.length;
-  const availableProducts = sampleProducts.filter(p => p.status === 'available').length;
-  const totalCustomers = sampleCustomers.length;
-  const activeOrders = sampleOrders.filter(o => o.status !== 'completed').length;
-  const totalRevenue = sampleOrders.reduce((sum, order) => sum + order.totalAmount, 0);
-  const totalCommissions = sampleStaff.reduce((sum, staff) => sum + staff.commissionEarned, 0);
+  const [stats, setStats] = useState({
+    totalProducts: 0,
+    availableProducts: 0,
+    totalCustomers: 0,
+    activeOrders: 0,
+    totalRevenue: 0,
+    totalCommissions: 0
+  });
+  
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [staffPerformance, setStaffPerformance] = useState([]);
 
-  const stats = [
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        // Fetch products count
+        const { count: productsCount } = await supabase
+          .from('products')
+          .select('*', { count: 'exact', head: true });
+
+        const { count: availableCount } = await supabase
+          .from('products')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'available');
+
+        // Fetch customers count
+        const { count: customersCount } = await supabase
+          .from('customers')
+          .select('*', { count: 'exact', head: true });
+
+        // Fetch active orders
+        const { count: ordersCount } = await supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .neq('status', 'completed');
+
+        // Fetch orders for revenue calculation
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('total_amount');
+
+        const totalRevenue = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+
+        // Fetch staff commissions
+        const { data: staff } = await supabase
+          .from('staff')
+          .select('commission_earned');
+
+        const totalCommissions = staff?.reduce((sum, s) => sum + (s.commission_earned || 0), 0) || 0;
+
+        setStats({
+          totalProducts: productsCount || 0,
+          availableProducts: availableCount || 0,
+          totalCustomers: customersCount || 0,
+          activeOrders: ordersCount || 0,
+          totalRevenue,
+          totalCommissions
+        });
+
+        // Fetch recent orders with customer and product details
+        const { data: ordersData } = await supabase
+          .from('orders')
+          .select(`
+            id,
+            order_number,
+            status,
+            total_amount,
+            customers!inner(name),
+            products!inner(name)
+          `)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        setRecentOrders(ordersData || []);
+
+        // Fetch staff performance
+        const { data: staffData } = await supabase
+          .from('staff')
+          .select('name, role, commission_earned')
+          .order('commission_earned', { ascending: false });
+
+        setStaffPerformance(staffData || []);
+
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  const dashboardStats = [
     {
       title: 'Total Products',
-      value: totalProducts,
+      value: stats.totalProducts,
       icon: List,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
@@ -30,7 +115,7 @@ const MainDashboard = () => {
     },
     {
       title: 'Available Items',
-      value: availableProducts,
+      value: stats.availableProducts,
       icon: List,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
@@ -39,7 +124,7 @@ const MainDashboard = () => {
     },
     {
       title: 'Total Customers',
-      value: totalCustomers,
+      value: stats.totalCustomers,
       icon: User,
       color: 'text-purple-600',
       bgColor: 'bg-purple-100',
@@ -48,7 +133,7 @@ const MainDashboard = () => {
     },
     {
       title: 'Active Orders',
-      value: activeOrders,
+      value: stats.activeOrders,
       icon: Calendar,
       color: 'text-orange-600',
       bgColor: 'bg-orange-100',
@@ -57,7 +142,7 @@ const MainDashboard = () => {
     },
     {
       title: 'Revenue (LKR)',
-      value: totalRevenue.toLocaleString(),
+      value: stats.totalRevenue.toLocaleString(),
       icon: TrendingUp,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
@@ -66,32 +151,29 @@ const MainDashboard = () => {
     },
     {
       title: 'Staff Commissions',
-      value: totalCommissions.toLocaleString(),
+      value: stats.totalCommissions.toLocaleString(),
       icon: ArrowRight,
-      color: 'text-navy-600',
-      bgColor: 'bg-navy-100',
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-100',
       change: '+10%',
       trend: 'up'
     }
   ];
 
-  const recentOrders = sampleOrders.slice(0, 5);
-
   return (
     <div className="p-8 space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Overview</h1>
-        <p className="text-gray-600">Welcome back! Here's what's happening with your rental business.</p>
+        <p className="text-gray-600">Welcome to VENEE Rental Management System</p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {stats.map((stat, index) => {
+        {dashboardStats.map((stat, index) => {
           const Icon = stat.icon;
           const TrendIcon = stat.trend === 'up' ? TrendingUp : TrendingDown;
           
           return (
-            <Card key={index} className="hover:shadow-lg transition-shadow">
+            <Card key={index} className="hover:shadow-lg transition-shadow border-l-4 border-l-purple-500">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -119,9 +201,7 @@ const MainDashboard = () => {
         })}
       </div>
 
-      {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Orders */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -131,12 +211,12 @@ const MainDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentOrders.map((order) => (
+              {recentOrders.map((order: any) => (
                 <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div>
-                    <p className="font-medium text-gray-900">{order.id}</p>
-                    <p className="text-sm text-gray-600">{order.customerName}</p>
-                    <p className="text-sm text-gray-500">{order.itemName}</p>
+                    <p className="font-medium text-gray-900">{order.order_number}</p>
+                    <p className="text-sm text-gray-600">{order.customers?.name}</p>
+                    <p className="text-sm text-gray-500">{order.products?.name}</p>
                   </div>
                   <div className="text-right">
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -147,7 +227,7 @@ const MainDashboard = () => {
                       {order.status}
                     </span>
                     <p className="text-sm font-medium text-gray-900 mt-1">
-                      LKR {order.totalAmount.toLocaleString()}
+                      LKR {order.total_amount?.toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -156,7 +236,6 @@ const MainDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Top Performers */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
@@ -166,19 +245,15 @@ const MainDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {sampleStaff.map((staff) => (
-                <div key={staff.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              {staffPerformance.map((staff: any, index) => (
+                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div>
                     <p className="font-medium text-gray-900">{staff.name}</p>
                     <p className="text-sm text-gray-600 capitalize">{staff.role}</p>
-                    <p className="text-sm text-gray-500">{staff.ordersHandled} orders handled</p>
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium text-gray-900">
-                      {staff.performance}% Performance
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      LKR {staff.commissionEarned.toLocaleString()}
+                      LKR {staff.commission_earned?.toLocaleString()}
                     </p>
                   </div>
                 </div>
@@ -187,40 +262,6 @@ const MainDashboard = () => {
           </CardContent>
         </Card>
       </div>
-
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <button className="p-4 bg-navy-50 rounded-lg text-left hover:bg-navy-100 transition-colors">
-              <List className="w-6 h-6 text-navy-600 mb-2" />
-              <p className="font-medium text-gray-900">Add Product</p>
-              <p className="text-sm text-gray-600">Add new rental item</p>
-            </button>
-            
-            <button className="p-4 bg-green-50 rounded-lg text-left hover:bg-green-100 transition-colors">
-              <User className="w-6 h-6 text-green-600 mb-2" />
-              <p className="font-medium text-gray-900">New Customer</p>
-              <p className="text-sm text-gray-600">Register new customer</p>
-            </button>
-            
-            <button className="p-4 bg-blue-50 rounded-lg text-left hover:bg-blue-100 transition-colors">
-              <Calendar className="w-6 h-6 text-blue-600 mb-2" />
-              <p className="font-medium text-gray-900">Create Order</p>
-              <p className="text-sm text-gray-600">Process new rental</p>
-            </button>
-            
-            <button className="p-4 bg-purple-50 rounded-lg text-left hover:bg-purple-100 transition-colors">
-              <ArrowRight className="w-6 h-6 text-purple-600 mb-2" />
-              <p className="font-medium text-gray-900">View Reports</p>
-              <p className="text-sm text-gray-600">Business analytics</p>
-            </button>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

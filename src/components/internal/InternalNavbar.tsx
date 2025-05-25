@@ -27,38 +27,38 @@ const InternalNavbar = ({ userRole, onLogout, onToggleSidebar }: InternalNavbarP
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 h-16 bg-white shadow-sm border-b border-gray-200 z-50">
+    <nav className="fixed top-0 left-0 right-0 h-16 bg-gradient-to-r from-purple-600 to-pink-600 shadow-lg z-50">
       <div className="flex items-center justify-between h-full px-4">
         <div className="flex items-center space-x-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={onToggleSidebar}
-            className="p-2"
+            className="p-2 text-white hover:bg-white/20"
           >
             <Menu className="w-5 h-5" />
           </Button>
           
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-navy-600 rounded-lg flex items-center justify-center">
-              <div className="w-4 h-5 bg-white rounded-sm"></div>
+            <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+              <div className="text-purple-600 font-bold text-lg">V</div>
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-gray-900">
-                Rental Management System
+              <h1 className="text-lg font-semibold text-white">
+                VENEE Rental Management
               </h1>
             </div>
           </div>
         </div>
 
         <div className="flex items-center space-x-4">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-white/90">
             {getRoleDisplayName(userRole)}
           </div>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="p-2">
+              <Button variant="ghost" size="sm" className="p-2 text-white hover:bg-white/20">
                 <User className="w-5 h-5" />
               </Button>
             </DropdownMenuTrigger>
