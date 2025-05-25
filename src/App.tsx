@@ -15,22 +15,27 @@ const App = () => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // TODO: Check authentication status with Supabase
-    // For now, simulate checking authentication
-    const checkAuth = () => {
-      const token = localStorage.getItem('auth_token');
-      const role = localStorage.getItem('user_role');
-      
-      if (token && role) {
-        setIsAuthenticated(true);
-        setUserRole(role);
-      }
-      setIsLoading(false);
-    };
+  const checkAuth = () => {
+    const token = localStorage.getItem('auth_token');
+    const role = localStorage.getItem('user_role');
+    
+    if (token && role) {
+      setIsAuthenticated(true);
+      setUserRole(role);
+    } else {
+      setIsAuthenticated(false);
+      setUserRole(null);
+    }
+    setIsLoading(false);
+  };
 
+  useEffect(() => {
     checkAuth();
   }, []);
+
+  const handleLoginSuccess = () => {
+    checkAuth(); // Re-check authentication after successful login
+  };
 
   if (isLoading) {
     return (
@@ -52,7 +57,7 @@ const App = () => {
           <Routes>
             {!isAuthenticated ? (
               <>
-                <Route path="/login" element={<LoginPage />} />
+                <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
                 <Route path="*" element={<Navigate to="/login" replace />} />
               </>
             ) : (

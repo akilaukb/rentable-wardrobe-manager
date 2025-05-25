@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, Shirt } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const LoginPage = () => {
+interface LoginPageProps {
+  onLoginSuccess?: () => void;
+}
+
+const LoginPage = ({ onLoginSuccess }: LoginPageProps = {}) => {
   const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -70,8 +73,13 @@ const LoginPage = () => {
         localStorage.setItem('auth_token', 'authenticated_user');
         localStorage.setItem('user_role', 'admin');
         
-        // Redirect to admin dashboard
-        window.location.href = '/admin';
+        // Trigger parent component to update authentication state
+        if (onLoginSuccess) {
+          onLoginSuccess();
+        } else {
+          // Fallback - force page reload to trigger auth check
+          window.location.reload();
+        }
       }, 1000);
     } catch (error) {
       setIsLoading(false);
